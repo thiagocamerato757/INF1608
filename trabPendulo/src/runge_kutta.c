@@ -1,6 +1,7 @@
 #include "runge_kutta.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Calcula as derivadas do sistema de EDOs do pêndulo
 // Sistema: dθ/dt = ω, dω/dt = -(g/L)sin(θ)
@@ -37,7 +38,28 @@ void rk4_passo(double t, PenduloEstado *estado, double dt, PenduloParametros *pa
     estado->omega += (dt / 6.0) * (k1.omega + 2.0*k2.omega + 2.0*k3.omega + k4.omega);
 }
 
-// Resolve o sistema para múltiplos passos de tempo
+// Passo com estimativa de erro (estratégia de dobrar o passo)
+void rk4_passo_com_erro(double t, PenduloEstado *estado, double dt, PenduloParametros *params, double *erro) {
+    PenduloEstado estado1 = *estado;
+    PenduloEstado estado2 = *estado;
+    
+    // Um passo com h
+    rk4_passo(t, &estado1, dt, params);
+    
+    // Dois passos com h/2
+    rk4_passo(t, &estado2, dt/2.0, params);
+    rk4_passo(t + dt/2.0, &estado2, dt/2.0, params);
+    
+    // Erro estimado (norma do vetor de diferença)
+    double erro_theta = fabs(estado2.theta - estado1.theta);
+    double erro_omega = fabs(estado2.omega - estado1.omega);
+    *erro = fmax(erro_theta, erro_omega);
+    
+    // Usar a solução de dois passos (mais precisa)
+    *estado = estado2;
+}
+
+// Resolve o sistema para múltiplos passos de tempo com passo constante
 void rk4_resolver(PenduloEstado *estado_inicial, double t0, double tf, int n_passos, 
                   PenduloParametros *params, PenduloEstado *solucao, double *tempo) {
     double dt = (tf - t0) / n_passos;
@@ -49,17 +71,101 @@ void rk4_resolver(PenduloEstado *estado_inicial, double t0, double tf, int n_pas
     
     // Itera sobre todos os passos de tempo
     for (int i = 0; i < n_passos; i++) {
-        rk4_passo(t, &solucao[i], dt, params);
+        solucao[i+1] = solucao[i];
+        rk4_passo(t, &solucao[i+1], dt, params);
         t += dt;
+        tempo[i+1] = t;
+    }
+}
+
+// Resolve o sistema usando RK4 com passo adaptativo
+int rk4_adaptativo(PenduloEstado *estado_inicial, double t0, double tf, double epsilon,
+                   PenduloParametros *params, PenduloEstado **solucao, double **tempo, int max_passos) {
+    // Aloca arrays iniciais
+    *solucao = malloc(max_passos * sizeof(PenduloEstado));
+    *tempo = malloc(max_passos * sizeof(double));
+    
+    if (!(*solucao) || !(*tempo)) {
+        return -1;
+    }
+    
+    (*solucao)[0] = *estado_inicial;
+    (*tempo)[0] = t0;
+    
+    double t = t0;
+    double dt = 0.01; // Passo inicial
+    int n = 0;
+    
+    while (t < tf && n < max_passos - 1) {
+        PenduloEstado estado_teste = (*solucao)[n];
+        double erro;
         
-        // Salva o próximo estado
-        if (i < n_passos - 1) {
-            solucao[i+1] = solucao[i];
-            tempo[i+1] = t;
+        // Ajusta passo para não ultrapassar tf
+        if (t + dt > tf) {
+            dt = tf - t;
+        }
+        
+        // Tenta um passo e calcula o erro
+        rk4_passo_com_erro(t, &estado_teste, dt, params, &erro);
+        
+        // Se o erro é aceitável, aceita o passo
+        if (erro < epsilon || dt < 1e-10) {
+            n++;
+            (*solucao)[n] = estado_teste;
+            t += dt;
+            (*tempo)[n] = t;
+            
+            // Aumenta o passo se o erro é muito pequeno
+            if (erro < epsilon / 10.0 && dt < 0.1) {
+                dt *= 1.5;
+            }
+        } else {
+            // Reduz o passo se o erro é muito grande
+            dt *= 0.5;
         }
     }
     
-    // Salva o estado final
-    solucao[n_passos] = solucao[n_passos-1];
-    tempo[n_passos] = tf;
+    return n + 1;
+}
+
+// Calcula o período usando detecção de mudança de sinal e interpolação linear
+double calcular_periodo(PenduloEstado *solucao, double *tempo, int n_pontos, int n_inversoes) {
+    int inversoes_encontradas = 0;
+    double t_primeira = -1.0;
+    double t_ultima = -1.0;
+    
+    for (int i = 1; i < n_pontos; i++) {
+        double v1 = solucao[i-1].omega;
+        double v2 = solucao[i].omega;
+        
+        // Detecta mudança de sinal
+        if (v1 * v2 <= 0.0) {
+            // Interpolação linear
+            double t_inversao = tempo[i-1] + fabs(v1) / (fabs(v1) + fabs(v2)) * (tempo[i] - tempo[i-1]);
+            
+            if (t_primeira < 0.0) {
+                t_primeira = t_inversao;
+            }
+            t_ultima = t_inversao;
+            
+            inversoes_encontradas++;
+            if (inversoes_encontradas >= n_inversoes) {
+                break;
+            }
+        }
+    }
+    
+    if (inversoes_encontradas < 2) {
+        return -1.0; // Não encontrou inversões suficientes
+    }
+    
+    // T = 2 * (tempo entre inversões) / (n_inversoes - 1)
+    // Cada meio-período é uma inversão
+    return 2.0 * (t_ultima - t_primeira) / (inversoes_encontradas - 1);
+}
+
+// Solução analítica linearizada: θ(t) = θ₀ cos(√(g/L) t)
+double solucao_analitica(double t, double theta0, PenduloParametros *params) {
+    double omega = sqrt(params->g / params->L);
+    return theta0 * cos(omega * t);
 }

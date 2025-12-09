@@ -1,35 +1,163 @@
-# Documentação - Implementação Numérica (Pessoa 1)
+# Documentação do Projeto - Simulação de Pêndulo
 
-## Método de Runge-Kutta de 4ª Ordem (RK4)
+## Status da Implementação
 
-### Descrição
+### ✅ IMPLEMENTADO (Thiago)
 
-Este módulo implementa o método de Runge-Kutta de 4ª ordem para resolver numericamente a equação diferencial ordinária (EDO) do pêndulo simples.
+#### 1. Método de Runge-Kutta de 4ª Ordem
 
-### Equação Diferencial
-
-A equação do movimento do pêndulo é:
-
+**Equação Diferencial NÃO LINEAR implementada:**
 ```
-d²θ/dt² = -(g/L)sin(θ)
+θ̈ + (g/L)sin(θ) = 0
 ```
 
-Para resolver com RK4, convertemos em um sistema de duas EDOs de primeira ordem:
-
+Convertida para sistema de primeira ordem:
 ```
 dθ/dt = ω
-dω/dt = -(g/L)sin(θ)
+dω/dt = -(g/L)sin(θ)  ← SEM LINEARIZAÇÃO!
 ```
 
-Onde:
-- θ = ângulo (radianos)
-- ω = velocidade angular (rad/s)
-- g = aceleração da gravidade (m/s²)
-- L = comprimento do pêndulo (m)
+**Funcionalidades:**
+- ✅ RK4 com passo constante (h = 0.01, 0.001, 0.0001)
+- ✅ RK4 com passo adaptativo (ε = 10⁻⁵)
+- ✅ Estratégia de dobrar o passo para estimar erro
+- ✅ Solução analítica linearizada (apenas para comparação)
 
-### Estruturas de Dados
+#### 2. Cálculo do Período
 
-#### `PenduloEstado`
+**Método implementado:**
+- ✅ Detecção de mudança de sinal da velocidade angular (ω)
+- ✅ Interpolação linear conforme fórmula do PDF:
+  ```
+  T = 2[t₁ + |v₁|/(|v₁|+|v₂|)(t₂-t₁)]
+  ```
+- ✅ Uso de múltiplas inversões (10 períodos) para maior precisão
+
+#### 3. Experimentos Automatizados
+
+**Programa principal (`./pendulo`):**
+- ✅ Testa 8 ângulos diferentes: 5°, 10°, 30°, 45°, 60°, 90°, 120°, 150°
+- ✅ Compara 5 métodos para cada ângulo:
+  - Solução analítica linearizada
+  - RK4 com h = 0.01
+  - RK4 com h = 0.001
+  - RK4 com h = 0.0001
+  - RK4 adaptativo (ε = 10⁻⁵)
+- ✅ Calcula automaticamente:
+  - Período para cada método
+  - Número de passos utilizados
+  - Tempo de CPU (ms)
+  - Erro relativo da aproximação linearizada
+
+#### 4. Análises Solicitadas no PDF
+
+**Implementado:**
+- ✅ Quadro comparativo de período e número de passos
+- ✅ Cálculo do ângulo máximo para erro < 0.001s → **Resultado: θ₀,max = 5.0°**
+- ✅ Tempo de execução para 10 períodos
+- ✅ Verificação de execução em tempo real → **Sim, > 1000x mais rápido**
+
+#### 5. Dados Gerados
+
+**Arquivos criados automaticamente:**
+```
+data/
+├── comparacao_theta10.txt   # θ₀ = 10°
+├── comparacao_theta45.txt   # θ₀ = 45°
+└── comparacao_theta90.txt   # θ₀ = 90°
+```
+
+**Formato dos arquivos:**
+```
+# Comparação: Solução Numérica vs Solução Analítica
+# θ₀ = 0.7854 rad (45.0 graus)
+# t(s)  theta_num(rad)  theta_anal(rad)  diferenca(rad)
+0.000000  0.785398  0.785398  0.000000
+0.000100  0.785398  0.785398  0.000000
+...
+```
+
+---
+
+## ⏳ PENDENTE
+
+### 1. Plotagem dos Resultados
+
+**Gráficos a serem gerados:**
+
+#### Gráfico 1: θ × t (um ciclo completo)
+Para cada ângulo inicial (10°, 45°, 90°):
+- Plotar solução numérica (linha azul contínua)
+- Plotar solução analítica linearizada (linha vermelha tracejada)
+- Título: "Comparação de Soluções - θ₀ = XX°"
+- Eixo X: Tempo (s)
+- Eixo Y: θ (graus ou radianos)
+
+#### Gráfico 2: Diferença entre soluções
+Para cada ângulo inicial:
+- Plotar |θ_numérico - θ_analítico| vs tempo
+- Mostra onde a linearização falha
+- Eixo X: Tempo (s)
+- Eixo Y: Diferença (rad ou graus)
+
+**Arquivos de entrada disponíveis:**
+- `data/comparacao_theta10.txt`
+- `data/comparacao_theta45.txt`
+- `data/comparacao_theta90.txt`
+
+**Sugestão de implementação (Python):**
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Ler dados
+data = np.loadtxt('data/comparacao_theta45.txt')
+t = data[:, 0]
+theta_num = data[:, 1]
+theta_anal = data[:, 2]
+
+# Plotar
+plt.figure(figsize=(10, 6))
+plt.plot(t, np.degrees(theta_num), 'b-', label='Numérico (RK4)')
+plt.plot(t, np.degrees(theta_anal), 'r--', label='Analítico (linearizado)')
+plt.xlabel('Tempo (s)')
+plt.ylabel('θ (graus)')
+plt.title('Comparação de Soluções - θ₀ = 45°')
+plt.grid(True)
+plt.legend()
+plt.savefig('plots/comparacao_theta45.png')
+```
+
+### 2. Análise dos Resultados
+
+**Análises a serem feitas:**
+
+#### Análise 1: Validade da Aproximação Linearizada
+- Confirmar que para θ₀ ≤ 5°, erro < 0.001s
+- Mostrar como o erro cresce com o ângulo inicial
+- Tabela ou gráfico de erro vs θ₀
+
+#### Análise 2: Eficiência dos Métodos
+- Comparar número de passos vs precisão
+- Mostrar que passo adaptativo é ~600x mais eficiente
+- Gráfico: passos vs h (para métodos de passo constante)
+
+#### Análise 3: Dependência do Período com θ₀
+- Gráfico: T(θ₀) vs θ₀
+- Mostrar que T aumenta com θ₀ (não linearidade)
+- Comparar com T_teórico constante
+
+#### Análise 4: Tempo Real
+- Confirmar que todos os métodos executam em tempo real
+- Calcular fator de aceleração para cada método
+- Tabela comparativa
+
+### 3. Relatório Final
+---
+
+## Estruturas de Dados
+
+### `PenduloEstado`
 Representa o estado do pêndulo em um dado instante:
 ```c
 typedef struct {
@@ -38,7 +166,7 @@ typedef struct {
 } PenduloEstado;
 ```
 
-#### `PenduloParametros`
+### `PenduloParametros`
 Armazena os parâmetros físicos do sistema:
 ```c
 typedef struct {
@@ -47,128 +175,141 @@ typedef struct {
 } PenduloParametros;
 ```
 
-### Funções Principais
+---
 
-#### `pendulo_derivada()`
+## Funções Implementadas
+
+### `pendulo_derivada()`
 ```c
-void pendulo_derivada(double t, PenduloEstado *estado, 
+void pendulo_derivada(double t, PenduloEstado *estado,
                      PenduloEstado *derivada, PenduloParametros *params)
 ```
+Calcula as derivadas do sistema (dθ/dt = ω, dω/dt = -(g/L)sin(θ))
 
-Calcula as derivadas do sistema:
-- **Entrada**: tempo t, estado atual, parâmetros do pêndulo
-- **Saída**: derivada (preenche a estrutura com dθ/dt e dω/dt)
-
-#### `rk4_passo()`
+### `rk4_passo()`
 ```c
-void rk4_passo(double t, PenduloEstado *estado, 
+void rk4_passo(double t, PenduloEstado *estado,
                double dt, PenduloParametros *params)
 ```
+Executa um passo do método RK4 clássico
 
-Executa um passo do método RK4:
-- **Entrada**: tempo t, estado atual, passo de tempo dt, parâmetros
-- **Saída**: atualiza o estado para o próximo instante (t + dt)
-
-O método RK4 calcula quatro incrementos (k1, k2, k3, k4) e combina-os:
-```
-k1 = f(t, y)
-k2 = f(t + dt/2, y + k1*dt/2)
-k3 = f(t + dt/2, y + k2*dt/2)
-k4 = f(t + dt, y + k3*dt)
-
-y_new = y + (dt/6) * (k1 + 2*k2 + 2*k3 + k4)
-```
-
-#### `rk4_resolver()`
+### `rk4_passo_com_erro()`
 ```c
-void rk4_resolver(PenduloEstado *estado_inicial, double t0, double tf, 
-                  int n_passos, PenduloParametros *params, 
+void rk4_passo_com_erro(double t, PenduloEstado *estado,
+                        double dt, PenduloParametros *params, double *erro)
+```
+Passo RK4 com estimativa de erro (dobrar o passo)
+
+### `rk4_resolver()`
+```c
+void rk4_resolver(PenduloEstado *estado_inicial, double t0, double tf,
+                  int n_passos, PenduloParametros *params,
                   PenduloEstado *solucao, double *tempo)
 ```
+Resolve com passo constante
 
-Resolve o sistema completo:
-- **Entrada**: 
-  - `estado_inicial`: condições iniciais
-  - `t0`: tempo inicial
-  - `tf`: tempo final
-  - `n_passos`: número de passos de integração
-  - `params`: parâmetros do pêndulo
-- **Saída**:
-  - `solucao`: array com estados em cada passo (tamanho n_passos+1)
-  - `tempo`: array com tempos correspondentes (tamanho n_passos+1)
-
-### Precisão e Convergência
-
-O método RK4 é de ordem 4, o que significa:
-- Erro local: O(dt⁵)
-- Erro global: O(dt⁴)
-
-**Testes de validação:**
-
-1. **Pequenos ângulos**: Verifica convergência com a solução harmônica
-2. **Conservação de energia**: Variação relativa < 10⁻⁸ para 1000 passos
-3. **Grande amplitude**: Comportamento não-linear correto
-
-### Uso
-
-#### Exemplo básico:
+### `rk4_adaptativo()`
 ```c
-#include "runge_kutta.h"
+int rk4_adaptativo(PenduloEstado *estado_inicial, double t0, double tf,
+                   double epsilon, PenduloParametros *params,
+                   PenduloEstado **solucao, double **tempo, int max_passos)
+```
+Resolve com passo adaptativo (ε = 10⁻⁵)
 
-// Definir parâmetros
-PenduloParametros params = {.g = 9.81, .L = 1.0};
+### `calcular_periodo()`
+```c
+double calcular_periodo(PenduloEstado *solucao, double *tempo,
+                       int n_pontos, int n_inversoes)
+```
+Calcula o período usando interpolação linear
 
-// Condições iniciais
-PenduloEstado estado = {.theta = 0.5, .omega = 0.0};
+### `solucao_analitica()`
+```c
+double solucao_analitica(double t, double theta0, PenduloParametros *params)
+```
+Retorna θ(t) = θ₀cos(√(g/L)t) - solução linearizada
 
-// Alocar memória para solução
-int n = 1000;
-PenduloEstado *sol = malloc((n+1) * sizeof(PenduloEstado));
-double *t = malloc((n+1) * sizeof(double));
+---
 
-// Resolver
-rk4_resolver(&estado, 0.0, 10.0, n, &params, sol, t);
+## Como Usar
 
-// Processar resultados...
-free(sol);
-free(t);
+### Compilar
+```bash
+make clean
+make
 ```
 
-### Compilação
-
+### Executar experimentos completos
 ```bash
-# Compilar testes
-make test
-
-# Executar testes
-./test_rk4
-
-# Compilar programa principal
-make
-
-# Executar
 ./pendulo
 ```
 
-### Arquivos
+### Executar testes de validação
+```bash
+make test
+./test_rk4
+```
 
-- `src/runge_kutta.h`: Interface do módulo
-- `src/runge_kutta.c`: Implementação do RK4
-- `tests/test_rk4.c`: Testes de validação
-- `src/main.c`: Programa principal de exemplo
+### Executar tudo (script completo)
+```bash
+./executar_tudo.sh
+```
 
-### Resultados dos Testes
+---
 
-Exemplo de saída do `test_rk4`:
+## Exemplo de Saída
 
 ```
-=== Teste 1: Pequenos ângulos ===
-Período teórico: 2.0061 s
-Diferença em θ: 0.000001 rad  ✓
+========================================
+Experimento: θ₀ = 45.0 graus (0.7854 rad)
+========================================
 
-=== Teste 2: Conservação de energia ===
-Variação relativa: 1.018096e-08  ✓
+Período teórico (linearizado): 2.006067 s
 
-=== Teste 3: Grande amplitude ===
-Simulação de 10.0s com 2000 passos  ✓
+Método              Período (s)    Passos          Tempo CPU (ms)
+--------------------------------------------------------------------------------
+Analítico           2.006067        N/A             N/A
+h = 0.01            2.086256        3009            0.14
+h = 0.001           2.086256        30091           1.29
+h = 0.0001          2.086256        300910          12.63
+Adaptativo (ε=1e-5) 2.086253        473             0.10
+
+Erro da aproximação linearizada: 0.080189 (3.8437%)
 ```
+
+---
+
+## Arquivos do Projeto
+
+```
+trabPendulo/
+├── src/
+│   ├── main.c              # Experimentos automatizados ✅
+│   ├── runge_kutta.c       # Implementação RK4 ✅
+│   └── runge_kutta.h       # Interface ✅
+├── tests/
+│   └── test_rk4.c          # Testes de validação ✅
+├── data/
+│   └── comparacao_*.txt    # Dados gerados ✅
+├── plots/                  # Para gráficos ⏳
+├── docs/
+│   ├── thiago_docs.md      # Este arquivo ✅
+│   └── tomás_docs.md       # Relatório da dupla ⏳
+├── Makefile                # Compilação ✅
+├── executar_tudo.sh        # Script completo ✅
+├── exemplos.sh             # Exemplos de uso ✅
+├── pendulo.pdf             # Enunciado original
+└── relatório.pdf           # Relatório Final ⏳
+```
+
+**Legenda:**
+- ✅ = Implementado
+- ⏳ = Pendente
+
+---
+
+## Referências
+
+- Enunciado: `pendulo.pdf`
+- Press, W. H. et al. "Numerical Recipes in C"
+- Butcher, J. C. "Numerical Methods for Ordinary Differential Equations"

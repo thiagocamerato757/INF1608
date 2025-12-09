@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Script de exemplo para executar simulações do pêndulo
-# Pessoa 1 - Implementação Numérica
-
 echo "================================================"
 echo "  Exemplos de Simulação - Pêndulo com RK4     "
 echo "================================================"
@@ -15,35 +12,38 @@ if [ ! -f "./pendulo" ]; then
     echo ""
 fi
 
-echo "=== Exemplo 1: Valores padrão ==="
+echo "NOTA: O programa atual executa experimentos automatizados."
+echo "Para ver todos os experimentos, execute: ./pendulo"
+echo ""
+echo "================================================"
+echo ""
+
+echo "=== Exemplo 1: Executar todos os experimentos ==="
 echo "Comando: ./pendulo"
 echo ""
+echo "Executa automaticamente:"
+echo "  - Experimentos com θ₀ = 5°, 10°, 30°, 45°, 60°, 90°, 120°, 150°"
+echo "  - Comparação de métodos (analítico, h=0.01, 0.001, 0.0001, adaptativo)"
+echo "  - Geração de dados para plotagem externa"
+echo "  - Determinação do ângulo máximo para erro < 0.001"
+echo ""
+read -p "Pressione ENTER para executar os experimentos completos (Ctrl+C para cancelar)..."
 ./pendulo
-echo ""
 
-echo "=== Exemplo 2: Pequeno ângulo (10°) ==="
-echo "Comando: ./pendulo 10 0 10 1000"
 echo ""
-./pendulo 10 0 10 1000 | tail -8
-echo ""
-
-echo "=== Exemplo 3: Grande ângulo (90°) ==="
-echo "Comando: ./pendulo 90 0 15 2000"
-echo ""
-./pendulo 90 0 15 2000 | tail -8
-echo ""
-
-echo "=== Exemplo 4: Com velocidade inicial ==="
-echo "Comando: ./pendulo 45 2.0 10 1000"
-echo ""
-./pendulo 45 2.0 10 1000 | tail -8
-echo ""
-
 echo "================================================"
-echo "Dados salvos em data/"
-echo "  - pendulo_data.txt"
-echo "  - energia.txt"
+echo "Dados gerados em data/"
+echo "  - comparacao_theta10.txt"
+echo "  - comparacao_theta45.txt"
+echo "  - comparacao_theta90.txt"
+echo ""
+echo "Formato dos arquivos:"
+echo "  t(s)  theta_num(rad)  theta_anal(rad)  diferenca(rad)"
 echo ""
 echo "Para ver ajuda:"
 echo "  ./pendulo --help"
+echo ""
+echo "Para executar testes de validação:"
+echo "  make test && ./test_rk4"
 echo "================================================"
+

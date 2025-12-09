@@ -21,27 +21,62 @@ void teste_pequeno_angulo() {
     double T_teorico = 2.0 * PI * sqrt(params.L / params.g);
     printf("Período teórico (pequenos ângulos): %.4f s\n", T_teorico);
     
-    // Simular um período
-    int n_passos = 1000;
+    // Simular 10 períodos
+    double tf = 10.0 * T_teorico;
+    int n_passos = 10000;
     PenduloEstado *solucao = malloc((n_passos + 1) * sizeof(PenduloEstado));
     double *tempo = malloc((n_passos + 1) * sizeof(double));
     
-    rk4_resolver(&estado, 0.0, T_teorico, n_passos, &params, solucao, tempo);
+    rk4_resolver(&estado, 0.0, tf, n_passos, &params, solucao, tempo);
     
-    printf("Estado inicial: θ = %.6f rad, ω = %.6f rad/s\n", 
-           solucao[0].theta, solucao[0].omega);
-    printf("Estado final:   θ = %.6f rad, ω = %.6f rad/s\n", 
-           solucao[n_passos].theta, solucao[n_passos].omega);
-    printf("Diferença em θ: %.6f rad\n", fabs(solucao[n_passos].theta - solucao[0].theta));
+    // Calcular período numérico
+    double T_numerico = calcular_periodo(solucao, tempo, n_passos + 1, 11);
+    printf("Período numérico: %.6f s\n", T_numerico);
+    printf("Erro relativo: %.6f%%\n", fabs(T_numerico - T_teorico) / T_teorico * 100.0);
     
     free(solucao);
     free(tempo);
     printf("\n");
 }
 
-// Teste de conservação de energia
-void teste_conservacao_energia() {
-    printf("=== Teste 2: Conservação de energia ===\n");
+// Teste de comparação com solução analítica
+void teste_solucao_analitica() {
+    printf("=== Teste 2: Comparação com solução analítica ===\n");
+    
+    PenduloEstado estado;
+    estado.theta = 0.174533;  // 10 graus
+    estado.omega = 0.0;
+    
+    PenduloParametros params;
+    params.g = 9.81;
+    params.L = 1.0;
+    
+    int n_passos = 1000;
+    PenduloEstado *solucao = malloc((n_passos + 1) * sizeof(PenduloEstado));
+    double *tempo = malloc((n_passos + 1) * sizeof(double));
+    
+    double tf = 2.0;
+    rk4_resolver(&estado, 0.0, tf, n_passos, &params, solucao, tempo);
+    
+    // Comparar com solução analítica em alguns pontos
+    double max_erro = 0.0;
+    for (int i = 0; i <= n_passos; i++) {
+        double theta_anal = solucao_analitica(tempo[i], estado.theta, &params);
+        double erro = fabs(solucao[i].theta - theta_anal);
+        if (erro > max_erro) max_erro = erro;
+    }
+    
+    printf("Erro máximo vs solução analítica: %.6e rad\n", max_erro);
+    printf("Erro máximo em graus: %.6f°\n", max_erro * 180.0 / PI);
+    
+    free(solucao);
+    free(tempo);
+    printf("\n");
+}
+
+// Teste com passo adaptativo
+void teste_passo_adaptativo() {
+    printf("=== Teste 3: Passo adaptativo ===\n");
     
     PenduloEstado estado;
     estado.theta = PI / 4.0;  // 45 graus
@@ -51,54 +86,63 @@ void teste_conservacao_energia() {
     params.g = 9.81;
     params.L = 1.0;
     
-    int n_passos = 1000;
-    PenduloEstado *solucao = malloc((n_passos + 1) * sizeof(PenduloEstado));
-    double *tempo = malloc((n_passos + 1) * sizeof(double));
+    PenduloEstado *solucao;
+    double *tempo;
     
-    rk4_resolver(&estado, 0.0, 10.0, n_passos, &params, solucao, tempo);
+    double tf = 10.0;
+    int n_passos = rk4_adaptativo(&estado, 0.0, tf, 1e-5, &params, &solucao, &tempo, 1000000);
     
-    // Energia = (1/2)*m*L²*ω² + m*g*L*(1-cos(θ))
-    // Normalizando por m*L:
-    double E_inicial = 0.5 * params.L * solucao[0].omega * solucao[0].omega + 
-                       params.g * (1.0 - cos(solucao[0].theta));
-    double E_final = 0.5 * params.L * solucao[n_passos].omega * solucao[n_passos].omega + 
-                     params.g * (1.0 - cos(solucao[n_passos].theta));
+    printf("Simulação de %.1f segundos\n", tf);
+    printf("Número de passos adaptativos: %d\n", n_passos);
+    printf("Passo médio: %.6f s\n", tf / n_passos);
     
-    printf("Energia inicial: %.8f\n", E_inicial);
-    printf("Energia final:   %.8f\n", E_final);
-    printf("Variação relativa: %.6e\n", fabs(E_final - E_inicial) / E_inicial);
+    // Calcular período
+    double T = calcular_periodo(solucao, tempo, n_passos, 11);
+    printf("Período calculado: %.6f s\n", T);
     
     free(solucao);
     free(tempo);
     printf("\n");
 }
 
-// Teste com grande amplitude
-void teste_grande_amplitude() {
-    printf("=== Teste 3: Grande amplitude ===\n");
+// Teste de cálculo do período
+void teste_calculo_periodo() {
+    printf("=== Teste 4: Cálculo do período ===\n");
     
-    PenduloEstado estado;
-    estado.theta = 2.0;  // ~114 graus
-    estado.omega = 0.0;
+    double angulos[] = {10.0, 30.0, 60.0, 90.0};
     
     PenduloParametros params;
     params.g = 9.81;
     params.L = 1.0;
     
-    int n_passos = 2000;
-    PenduloEstado *solucao = malloc((n_passos + 1) * sizeof(PenduloEstado));
-    double *tempo = malloc((n_passos + 1) * sizeof(double));
+    double T_teorico = 2.0 * PI * sqrt(params.L / params.g);
     
-    rk4_resolver(&estado, 0.0, 10.0, n_passos, &params, solucao, tempo);
+    printf("Período teórico (linearizado): %.6f s\n\n", T_teorico);
+    printf("Ângulo (°)  Período (s)  Erro (%%)\n");
+    printf("----------------------------------------\n");
     
-    printf("Amplitude inicial: %.4f rad (%.1f graus)\n", 
-           estado.theta, estado.theta * 180.0 / PI);
-    printf("Simulação de %.1f segundos com %d passos\n", 10.0, n_passos);
-    printf("Estado final: θ = %.6f rad, ω = %.6f rad/s\n", 
-           solucao[n_passos].theta, solucao[n_passos].omega);
+    for (size_t i = 0; i < sizeof(angulos)/sizeof(angulos[0]); i++) {
+        double theta0 = angulos[i] * PI / 180.0;
+        
+        PenduloEstado estado;
+        estado.theta = theta0;
+        estado.omega = 0.0;
+        
+        double tf = 20.0;
+        int n_passos = 20000;
+        PenduloEstado *solucao = malloc((n_passos + 1) * sizeof(PenduloEstado));
+        double *tempo = malloc((n_passos + 1) * sizeof(double));
+        
+        rk4_resolver(&estado, 0.0, tf, n_passos, &params, solucao, tempo);
+        double T = calcular_periodo(solucao, tempo, n_passos + 1, 11);
+        
+        double erro = fabs(T - T_teorico) / T * 100.0;
+        printf("%8.1f    %10.6f  %8.4f\n", angulos[i], T, erro);
+        
+        free(solucao);
+        free(tempo);
+    }
     
-    free(solucao);
-    free(tempo);
     printf("\n");
 }
 
@@ -109,8 +153,9 @@ int main() {
     printf("===============================================\n\n");
     
     teste_pequeno_angulo();
-    teste_conservacao_energia();
-    teste_grande_amplitude();
+    teste_solucao_analitica();
+    teste_passo_adaptativo();
+    teste_calculo_periodo();
     
     printf("Testes concluídos!\n");
     return 0;
