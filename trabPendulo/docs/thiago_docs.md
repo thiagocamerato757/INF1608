@@ -72,10 +72,12 @@ data/
 # Comparação: Solução Numérica vs Solução Analítica
 # θ₀ = 0.7854 rad (45.0 graus)
 # t(s)  theta_num(rad)  theta_anal(rad)  diferenca(rad)
-0.000000  0.785398  0.785398  0.000000
-0.000100  0.785398  0.785398  0.000000
+0.000000  0.785398  0.785398  0.000000e+00
+0.000100  0.785398  0.785398  3.840448e-09
 ...
 ```
+
+**Nota:** A coluna de diferença usa notação científica para representar valores muito pequenos com precisão.
 
 ---
 

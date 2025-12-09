@@ -157,11 +157,18 @@ void gerar_graficos_comparacao(double theta0_graus, PenduloParametros *params) {
         
         for (int i = 0; i <= n_passos; i++) {
             double theta_anal = solucao_analitica(tempo[i], theta0, params);
-            fprintf(fp, "%.6f\t%.6f\t%.6f\t%.6f\n", 
+            double diferenca = fabs(solucao[i].theta - theta_anal);
+            
+            // Se a diferença for muito pequena (< 1e-10), considerar como zero
+            if (diferenca < 1e-10) {
+                diferenca = 0.0;
+            }
+            
+            fprintf(fp, "%.6f\t%.6f\t%.6f\t%.6e\n", 
                     tempo[i], 
                     solucao[i].theta, 
                     theta_anal,
-                    fabs(solucao[i].theta - theta_anal));
+                    diferenca);
         }
         fclose(fp);
         printf("✓ Dados salvos em: %s\n", filename);
