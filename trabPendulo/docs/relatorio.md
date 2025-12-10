@@ -2,7 +2,7 @@
 title: "Relatório do Trabalho: Simulação do Pêndulo Simples"
 author:
   - "Thiago Camerato"
-  - "Tomás Lenzi (matrícula 2220711)"
+  - "Tomás Lenzi (2220711)"
 date: "Dezembro de 2025"
 lang: pt-BR
 geometry: margin=2.5cm
