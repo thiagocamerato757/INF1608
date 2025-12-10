@@ -15,7 +15,7 @@ OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 MAIN = pendulo
 TEST = test_rk4
 
-.PHONY: all clean test dirs
+.PHONY: all clean test dirs plot
 
 all: dirs $(MAIN)
 
@@ -67,3 +67,7 @@ clean-all: clean
 	rm -rf $(DATA_DIR)/*
 	rm -rf plots/*
 	@echo "✓ Dados e plots removidos"
+
+.PHONY: plot
+plot:
+	@bash plotar_graficos.sh

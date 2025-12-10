@@ -26,8 +26,23 @@ echo "========================================================"
 echo "2. Executando experimentos completos..."
 echo ""
 ./pendulo
-
 echo ""
+
+# Gerar gráficos
+echo "========================================================"
+echo "3. Gerando gráficos..."
+echo ""
+if ! command -v gnuplot &> /dev/null
+then
+    echo "gnuplot não foi encontrado, pulando a geração de gráficos."
+    echo "Para gerar os gráficos, instale o gnuplot com o comando:"
+    echo "sudo apt-get install gnuplot"
+else
+    bash plotar_graficos.sh
+fi
+echo ""
+
+
 echo "========================================================"
 echo "  RESULTADOS DISPONÍVEIS"
 echo "========================================================"
@@ -37,9 +52,13 @@ echo "  - data/comparacao_theta10.txt"
 echo "  - data/comparacao_theta45.txt"
 echo "  - data/comparacao_theta90.txt"
 echo ""
+echo "Gráficos gerados:"
+echo "  - plots/comparacao_theta10.png"
+echo "  - plots/comparacao_theta45.png"
+echo "  - plots/comparacao_theta90.png"
+echo ""
 echo "Documentação:"
 echo "  - docs/RELATORIO.md (relatório técnico)"
 echo ""
 echo "✓ Projeto concluído com sucesso!"
-echo "✓ Os dados estão prontos para plotagem externa (adicionar a parte de plotagem dps)"
 echo "========================================================"
