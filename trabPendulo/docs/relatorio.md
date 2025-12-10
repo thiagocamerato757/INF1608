@@ -1,7 +1,7 @@
 ---
 title: "Relatório do Trabalho: Simulação do Pêndulo Simples"
 author:
-  - "Thiago Camerato"
+  - "Thiago Camerato (2212580)"
   - "Tomás Lenzi (2220711)"
 date: "Dezembro de 2025"
 lang: pt-BR
