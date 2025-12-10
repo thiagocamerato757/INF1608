@@ -56,6 +56,63 @@ O período $T$ do ciclo foi calculado numericamente monitorando a mudança de si
 
 ---
 
+**Trechos em Pseudocódigo usados no desenvolvimento**
+
+- **Conversão para sistema de 1ª ordem:**
+
+```text
+// estado = (theta, omega)
+dtheta/dt = omega
+domega/dt = - (g / L) * sin(theta)
+```
+
+- **Passo RK4 (um passo):**
+
+```text
+k1 = f(t, y)
+k2 = f(t + h/2, y + k1*h/2)
+k3 = f(t + h/2, y + k2*h/2)
+k4 = f(t + h, y + k3*h)
+y_next = y + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
+```
+
+- **Integração com passo fixo:**
+
+```text
+t = t0
+for i = 1..N:
+  y = RK4_step(t, y, h)
+  t = t + h
+```
+
+- **Passo adaptativo (estimativa por duplicação de passo):**
+
+```text
+// tenta 1 passo h e 2 passos h/2; calcula erro e ajusta h
+while t < tf:
+  y1 = RK4_step(t, y, h)
+  y2 = RK4_step(t, y, h/2)
+  y2 = RK4_step(t + h/2, y2, h/2)
+  error = max(|y2 - y1|)
+  if error < eps:
+    accept y = y2; t += h
+    if error < eps/10: h *= 1.5
+  else:
+    h *= 0.5
+```
+
+- **Cálculo do período (detecção de inversões em \omega):**
+
+```text
+inversions = []
+for i = 1..n:
+  if omega[i-1] * omega[i] <= 0:
+    t_inv = interp_linear(time[i-1], time[i], omega[i-1], omega[i])
+    append(inversions, t_inv)
+// usando várias inversões: T = 2*(t_last - t_first)/(count - 1)
+T = 2 * (inversions[last] - inversions[first]) / (count(inversions) - 1)
+```
+
 ## Resultados e Análise
 
 Esta seção apresenta os resultados obtidos através dos experimentos computacionais, focando na comparação entre a solução numérica e a analítica, na eficiência dos métodos e na dependência do período com a amplitude.
@@ -64,8 +121,11 @@ Esta seção apresenta os resultados obtidos através dos experimentos computaci
 
 Os experimentos confirmam que a solução analítica simplificada só é precisa para ângulos iniciais pequenos. O erro da aproximação cresce rapidamente com o aumento do ângulo inicial $\theta_0$.
 
-- **Limite de Erro:** Nossos testes indicam que para um ângulo inicial **$\theta_0 \leq 5^\circ$**, o erro absoluto no período é inferior a $0{,}001 \, \text{s}$, satisfazendo o critério do enunciado.
-- **Análise Gráfica:** Os gráficos de comparação ilustram visualmente essa divergência. Para $\theta_0 = 10^\circ$, as curvas numérica e analítica são quase indistinguíveis. No entanto, para $\theta_0 = 45^\circ$ e, de forma mais acentuada, para $\theta_0 = 90^\circ$, a solução analítica se afasta significativamente da solução numérica, que representa o comportamento físico mais preciso.
+As Figuras 1, 2 e 3 abaixo ilustram a comparação entre a solução numérica (RK4) e a solução analítica linearizada para diferentes ângulos iniciais:
+
+- **Figura 1:** Mostra o comportamento do pêndulo para $\theta_0 = 10^\circ$. As duas soluções praticamente coincidem, evidenciando a validade da aproximação linearizada para pequenos ângulos.
+- **Figura 2:** Para $\theta_0 = 45^\circ$, observa-se uma diferença crescente entre as soluções, indicando o início da limitação da aproximação analítica.
+- **Figura 3:** Com $\theta_0 = 90^\circ$, a divergência é clara, mostrando que a solução analítica não representa bem o sistema físico para grandes amplitudes.
 
 ![Comparação de Soluções para θ₀ = 10°](../plots/comparacao_theta10.png)
 _Figura 1: Comparação entre a solução numérica (azul) e a analítica (vermelho tracejado) para um ângulo inicial de 10°._
@@ -76,6 +136,8 @@ _Figura 2: Comparação para 45°._
 ![Comparação de Soluções para θ₀ = 90°](../plots/comparacao_theta90.png)
 _Figura 3: Comparação para 90°._
 
+<br><br>
+
 Os gráficos de diferença, calculados como
 
 $$
@@ -84,11 +146,20 @@ $$
 
 quantificam o erro ao longo do tempo.
 
+As Figuras 4, 5 e 6 apresentam a diferença absoluta entre as soluções numérica e analítica ao longo do tempo para os mesmos ângulos iniciais:
+
+- **Figura 4:** Para $\theta_0 = 10^\circ$, a diferença permanece próxima de zero, confirmando a precisão da solução analítica nesse regime.
+- **Figura 5:** Em $\theta_0 = 45^\circ$, a diferença cresce com o tempo, evidenciando o erro acumulado da aproximação linearizada.
+- **Figura 6:** Para $\theta_0 = 90^\circ$, o erro é significativo durante todo o ciclo, mostrando que a solução analítica não é adequada para grandes amplitudes.
+
 ![Diferença entre Soluções para θ₀ = 10°](../plots/diferenca_theta10.png)
+_Figura 4: Diferença entre solução numérica e analítica para $\theta_0 = 10^\circ$._
 
 ![Diferença entre Soluções para θ₀ = 45°](../plots/diferenca_theta45.png)
+_Figura 5: Diferença para $\theta_0 = 45^\circ$._
 
 ![Diferença entre Soluções para θ₀ = 90°](../plots/diferenca_theta90.png)
+_Figura 6: Diferença para $\theta_0 = 90^\circ$._
 
 ### Eficiência dos Métodos e Análise do Período
 
